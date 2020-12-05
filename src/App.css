@@ -1,9 +1,9 @@
 .grid-container {
     display: grid;
     width: 100%;
-    grid-template-areas: 
-        "map graph"
-        "controls controls";
+    grid-template-areas:
+        'map graph'
+        'controls controls';
 }
 
 .graph {
@@ -22,4 +22,19 @@
     height: 20%;
     grid-area: controls;
     background-color: greenyellow;
+}
+
+#marker-container {
+    background-color: white;
+    height: 40px;
+    width: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+#marker {
+    width: 30px;
 }

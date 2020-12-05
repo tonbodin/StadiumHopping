@@ -1,21 +1,20 @@
-import React, { Component } from "react";
+import React, { Component } from 'react';
 import ReactFlow, {
     removeElements,
     addEdge,
     Controls,
     Background,
     isNode,
-} from "react-flow-renderer";
-import Slider from "@material-ui/core/Slider";
-import Button from "@material-ui/core/Button";
-import ReplayIcon from "@material-ui/icons/Replay";
+} from 'react-flow-renderer';
+import Slider from '@material-ui/core/Slider';
+import Button from '@material-ui/core/Button';
+import ReplayIcon from '@material-ui/icons/Replay';
 import {
     makeArray,
-    elements,
     generateAdjacencyMatrix,
     colorPath,
     customNode,
-} from "../common/util";
+} from '../common/util';
 import {
     costTextStyle,
     currentTextStyle,
@@ -26,77 +25,96 @@ import {
     sliderStyle,
     startButtonStyle,
     titleTextStyle,
-} from "../common/styles";
+} from '../common/styles';
 
 let selectedNodes = {};
 
 export default class GraphVisualizer extends Component {
     constructor(props) {
         super(props);
-        let matrix = generateAdjacencyMatrix();
         this.state = {
-            matrix: matrix,
-            elements: elements(matrix),
+            matrix: props.matrix,
+            elements: props.elements,
+            data: props.data,
             delay: 1000,
-            path: "",
-            answer: "",
-            message: "",
+            path: '',
+            answer: '',
+            message: '',
         };
     }
 
     onElementsRemove = (elementsToRemove) =>
-        this.setState({ elements: removeElements(elementsToRemove, elements) });
+        this.setState({
+            elements: removeElements(elementsToRemove, this.state.elements),
+        });
     onConnect = (params) =>
-        this.setState({ elements: addEdge(params, elements) });
+        this.setState({ elements: addEdge(params, this.state.elements) });
     onLoad = (reactFlowInstance) => reactFlowInstance.fitView();
-    onSelectionChange = (elements) => console.log("selection change", elements);
+    onSelectionChange = (elements) =>
+        console.log('selection change', this.state.elements);
     onElementClick = (event, element) =>
-        console.log(`${isNode(element) ? "node" : "edge"} click:`, element);
-    onNodeDragStart = (event, node) => console.log("drag start", node);
-    onNodeDragStop = (event, node) => console.log("drag stop", node);
-    onPaneClick = (event) => console.log("pane click", event);
-    onPaneScroll = (event) => console.log("pane scroll", event);
-    onPaneContextMenu = (event) => console.log("pane context menu", event);
-    onSelectionDrag = (event, nodes) => console.log("selection drag", nodes);
+        console.log(`${isNode(element) ? 'node' : 'edge'} click:`, element);
+    onNodeDragStart = (event, node) => console.log('drag start', node);
+    onNodeDragStop = (event, node) => console.log('drag stop', node);
+    onPaneClick = (event) => console.log('pane click', event);
+    onPaneScroll = (event) => console.log('pane scroll', event);
+    onPaneContextMenu = (event) => console.log('pane context menu', event);
+    onSelectionDrag = (event, nodes) => console.log('selection drag', nodes);
     onSelectionDragStart = (event, nodes) =>
-        console.log("selection drag start", nodes);
+        console.log('selection drag start', nodes);
     onSelectionDragStop = (event, nodes) =>
-        console.log("selection drag stop", nodes);
+        console.log('selection drag stop', nodes);
     onSelectionContextMenu = (event, nodes) => {
         event.preventDefault();
-        console.log("selection context menu", nodes);
+        console.log('selection context menu', nodes);
     };
-    onMoveEnd = (transform) => console.log("zoom/move end", transform);
+    onMoveEnd = (transform) => console.log('zoom/move end', transform);
 
     visitNodes(start, end) {
         selectedNodes[this.state.elements[start].id] = 1;
-        let elem1 = this.state.elements.find((e) => e.id === `__${start}__${end}`);
-        let elem2 = this.state.elements.find((e) => e.id === `__${end}__${start}`);
+        let elem1 = this.state.elements.find(
+            (e) => e.id === `__${start}__${end}`,
+        );
+        let elem2 = this.state.elements.find(
+            (e) => e.id === `__${end}__${start}`,
+        );
         selectedNodes[elem1.id] = 1;
         selectedNodes[elem2.id] = 1;
         this.setState({
-          elements: colorPath(this.state.elements, selectedNodes),
-          message: `Visiting Node ${end} from Node ${start}`,
+            elements: colorPath(this.state.elements, selectedNodes),
+            message: `Visiting ${this.state.data[end].abv} from ${this.state.data[start].abv}`,
         });
-      };
+    }
     unvisitNodes(start, end) {
         delete selectedNodes[this.state.elements[start].id];
-        let elem1 = this.state.elements.find((e) => e.id === `__${start}__${end}`);
-        let elem2 = this.state.elements.find((e) => e.id === `__${end}__${start}`);
+        let elem1 = this.state.elements.find(
+            (e) => e.id === `__${start}__${end}`,
+        );
+        let elem2 = this.state.elements.find(
+            (e) => e.id === `__${end}__${start}`,
+        );
         delete selectedNodes[elem1.id];
         delete selectedNodes[elem2.id];
         this.setState({
-          elements: colorPath(this.state.elements, selectedNodes),
-          message: `Unvisiting Node ${end}`,
+            elements: colorPath(this.state.elements, selectedNodes),
+            message: `Unvisiting Node ${this.state.data[end].abv}`,
         });
-      }
+    }
 
     travellingSalesperson = async (matrix) => {
         const N = matrix.length;
         let memo = makeArray(N, Math.pow(2, N), -1);
         let pathState = makeArray(N, Math.pow(2, N), 0);
         let FINAL_STATE = (1 << N) - 1;
-        let cost = await this.helper(matrix, pathState, memo, FINAL_STATE, N, 1, 0);
+        let cost = await this.helper(
+            matrix,
+            pathState,
+            memo,
+            FINAL_STATE,
+            N,
+            1,
+            0,
+        );
         this.setState({
             answer: cost,
             path: this.listOptimalPath(pathState),
@@ -115,9 +133,9 @@ export default class GraphVisualizer extends Component {
             index = nextIndex;
         }
         optimalPath.push(0);
-        let z = optimalPath[0].toString();
+        let z = this.state.data[optimalPath[0]].abv;
         for (let i = 1; i < optimalPath.length; i++) {
-            z = z + " ---> " + optimalPath[i].toString();
+            z = z + ' ---> ' + this.state.data[optimalPath[i]].abv;
         }
         return z;
     };
@@ -128,7 +146,7 @@ export default class GraphVisualizer extends Component {
         FINAL_STATE,
         N,
         visited,
-        position
+        position,
     ) => {
         if (visited === FINAL_STATE) {
             this.visitNodes(position, 0);
@@ -153,14 +171,14 @@ export default class GraphVisualizer extends Component {
                         FINAL_STATE,
                         N,
                         visited | (1 << i),
-                        i
+                        i,
                     ));
                 if (ans < min) {
                     min = ans;
                     index = i;
                 }
-                this.unvisitNodes(position, i);
                 await this.sleep(this.state.delay / 2);
+                this.unvisitNodes(position, i);
             }
         }
 
@@ -198,14 +216,17 @@ export default class GraphVisualizer extends Component {
                 >
                     <Controls />
                     <Background color="#ffffff22" />
-                    <div style={titleTextStyle}>Travelling Salesperson Visualizer</div>
                     <div style={costTextStyle}>Cost: {this.state.answer}</div>
                     <div style={pathTextStyle}>Path: {this.state.path}</div>
-                    <div style={currentTextStyle}>Current: {this.state.message}</div>
+                    <div style={currentTextStyle}>
+                        Current: {this.state.message}
+                    </div>
                     <div style={delayTextStyle}>Delay(ms)</div>
                     <Button
                         variant="contained"
-                        onClick={() => this.travellingSalesperson(this.state.matrix)}
+                        onClick={() =>
+                            this.travellingSalesperson(this.state.matrix)
+                        }
                         style={startButtonStyle}
                     >
                         Start
@@ -216,7 +237,9 @@ export default class GraphVisualizer extends Component {
                         value={this.state.delay}
                         step={50}
                         style={sliderStyle}
-                        onChange={(event, value) => this.setState({ delay: value })}
+                        onChange={(event, value) =>
+                            this.setState({ delay: value })
+                        }
                         aria-labelledby="continuous-slider"
                         valueLabelDisplay="auto"
                     />
