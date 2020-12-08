@@ -36,6 +36,17 @@ function haversine_distance(i, j) {
     return d;
 }
 
+export const randomizeData = (arr) => {
+    let x = Math.floor(Math.random() * 3 + 5);
+    const temp = [...arr];
+    let result = [];
+    for (let i = 0; i < x; i++) {
+        let randIndex = Math.floor(Math.random() * (temp.length - 1));
+        result.push(temp.splice(randIndex, 1)[0]);
+    }
+    return result;
+};
+
 export const generateAdjacencyMatrix = (arr) => {
     let result = makeArray(arr.length, arr.length, 0);
     arr.forEach((obj1, idx1) => {

@@ -1,31 +1,7 @@
 import React, { Component } from 'react';
-import ReactFlow, {
-    removeElements,
-    addEdge,
-    Controls,
-    Background,
-    isNode,
-} from 'react-flow-renderer';
-import Slider from '@material-ui/core/Slider';
-import Button from '@material-ui/core/Button';
-import ReplayIcon from '@material-ui/icons/Replay';
-import {
-    makeArray,
-    generateAdjacencyMatrix,
-    colorPath,
-    customNode,
-} from '../common/util';
-import {
-    costTextStyle,
-    currentTextStyle,
-    delayTextStyle,
-    graphStyle,
-    pathTextStyle,
-    replayButtonStyle,
-    sliderStyle,
-    startButtonStyle,
-    titleTextStyle,
-} from '../common/styles';
+import ReactFlow, { Controls } from 'react-flow-renderer';
+import { makeArray, colorPath, customNode } from '../common/util';
+import { graphStyle } from '../common/styles';
 
 let selectedNodes = {};
 
@@ -33,42 +9,9 @@ export default class GraphVisualizer extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            matrix: props.matrix,
             elements: props.elements,
-            data: props.data,
-            delay: 1000,
-            path: '',
-            answer: '',
-            message: '',
         };
     }
-
-    onElementsRemove = (elementsToRemove) =>
-        this.setState({
-            elements: removeElements(elementsToRemove, this.state.elements),
-        });
-    onConnect = (params) =>
-        this.setState({ elements: addEdge(params, this.state.elements) });
-    onLoad = (reactFlowInstance) => reactFlowInstance.fitView();
-    onSelectionChange = (elements) =>
-        console.log('selection change', this.state.elements);
-    onElementClick = (event, element) =>
-        console.log(`${isNode(element) ? 'node' : 'edge'} click:`, element);
-    onNodeDragStart = (event, node) => console.log('drag start', node);
-    onNodeDragStop = (event, node) => console.log('drag stop', node);
-    onPaneClick = (event) => console.log('pane click', event);
-    onPaneScroll = (event) => console.log('pane scroll', event);
-    onPaneContextMenu = (event) => console.log('pane context menu', event);
-    onSelectionDrag = (event, nodes) => console.log('selection drag', nodes);
-    onSelectionDragStart = (event, nodes) =>
-        console.log('selection drag start', nodes);
-    onSelectionDragStop = (event, nodes) =>
-        console.log('selection drag stop', nodes);
-    onSelectionContextMenu = (event, nodes) => {
-        event.preventDefault();
-        console.log('selection context menu', nodes);
-    };
-    onMoveEnd = (transform) => console.log('zoom/move end', transform);
 
     visitNodes(start, end) {
         selectedNodes[this.state.elements[start].id] = 1;
@@ -80,9 +23,11 @@ export default class GraphVisualizer extends Component {
         );
         selectedNodes[elem1.id] = 1;
         selectedNodes[elem2.id] = 1;
+        this.props.setEvaluating(
+            `Visiting ${this.props.data[end].team} from ${this.props.data[start].team}`,
+        );
         this.setState({
             elements: colorPath(this.state.elements, selectedNodes),
-            message: `Visiting ${this.state.data[end].abv} from ${this.state.data[start].abv}`,
         });
     }
     unvisitNodes(start, end) {
@@ -95,9 +40,9 @@ export default class GraphVisualizer extends Component {
         );
         delete selectedNodes[elem1.id];
         delete selectedNodes[elem2.id];
+        this.props.setEvaluating(`Unvisiting ${this.props.data[end].team}`);
         this.setState({
             elements: colorPath(this.state.elements, selectedNodes),
-            message: `Unvisiting Node ${this.state.data[end].abv}`,
         });
     }
 
@@ -115,12 +60,10 @@ export default class GraphVisualizer extends Component {
             1,
             0,
         );
-        this.setState({
-            answer: cost,
-            path: this.listOptimalPath(pathState),
-        });
+        this.props.stopRunning();
+        await this.listOptimalPath(pathState);
     };
-    listOptimalPath = (pathState) => {
+    listOptimalPath = async (pathState) => {
         let optimalPath = [];
         let index = 0;
         let position = 1;
@@ -133,11 +76,14 @@ export default class GraphVisualizer extends Component {
             index = nextIndex;
         }
         optimalPath.push(0);
-        let z = this.state.data[optimalPath[0]].abv;
+        let z = this.props.data[optimalPath[0]].team;
         for (let i = 1; i < optimalPath.length; i++) {
-            z = z + ' ---> ' + this.state.data[optimalPath[i]].abv;
+            this.visitNodes(optimalPath[i - 1], optimalPath[i]);
+            await this.sleep(this.props.delay / 2);
+            z = z + ' ---> ' + this.props.data[optimalPath[i]].team;
         }
-        return z;
+        this.props.callback(optimalPath);
+        this.props.setEvaluating(z);
     };
     helper = async (
         matrix,
@@ -150,7 +96,7 @@ export default class GraphVisualizer extends Component {
     ) => {
         if (visited === FINAL_STATE) {
             this.visitNodes(position, 0);
-            await this.sleep(this.state.delay / 2);
+            await this.sleep(this.props.delay / 2);
             this.unvisitNodes(position, 0);
             return matrix[position][0];
         } else if (memo[visited][position] !== -1) {
@@ -161,7 +107,7 @@ export default class GraphVisualizer extends Component {
         for (let i = 0; i < N; i++) {
             if ((visited & (1 << i)) === 0) {
                 this.visitNodes(position, i);
-                await this.sleep(this.state.delay / 2);
+                await this.sleep(this.props.delay / 2);
                 let ans =
                     matrix[position][i] +
                     (await this.helper(
@@ -177,7 +123,7 @@ export default class GraphVisualizer extends Component {
                     min = ans;
                     index = i;
                 }
-                await this.sleep(this.state.delay / 2);
+                await this.sleep(this.props.delay / 2);
                 this.unvisitNodes(position, i);
             }
         }
@@ -189,67 +135,33 @@ export default class GraphVisualizer extends Component {
         return new Promise((resolve) => setTimeout(resolve, ms));
     };
 
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        if (this.props.running && this.props.running !== prevProps.running) {
+            selectedNodes = {};
+            this.setState(
+                {
+                    elements: colorPath(this.state.elements, selectedNodes),
+                },
+                () => this.travellingSalesperson(this.props.matrix),
+            );
+        }
+        if (this.props.elements !== prevProps.elements) {
+            this.setState({ elements: this.props.elements });
+        }
+    }
+
     render() {
         return (
             <div style={graphStyle}>
                 <ReactFlow
                     elements={this.state.elements}
-                    onElementClick={this.onElementClick}
-                    onElementsRemove={this.onElementsRemove}
-                    onConnect={this.onConnect}
-                    onPaneClick={this.onPaneClick}
-                    onPaneScroll={this.onPaneScroll}
-                    onPaneContextMenu={this.onPaneContextMenu}
-                    onNodeDragStart={this.onNodeDragStart}
-                    onNodeDragStop={this.onNodeDragStop}
-                    onSelectionDragStart={this.onSelectionDragStart}
-                    onSelectionDrag={this.onSelectionDrag}
-                    onSelectionDragStop={this.onSelectionDragStop}
-                    onSelectionContextMenu={this.onSelectionContextMenu}
-                    onSelectionChange={this.onSelectionChange}
-                    onMoveEnd={this.onMoveEnd}
-                    onLoad={this.onLoad}
+                    onLoad={(reactFlowInstance) => reactFlowInstance.fitView()}
                     connectionLineType="straight"
                     nodeTypes={{
                         customNode: customNode,
                     }}
                 >
                     <Controls />
-                    <Background color="#ffffff22" />
-                    <div style={costTextStyle}>Cost: {this.state.answer}</div>
-                    <div style={pathTextStyle}>Path: {this.state.path}</div>
-                    <div style={currentTextStyle}>
-                        Current: {this.state.message}
-                    </div>
-                    <div style={delayTextStyle}>Delay(ms)</div>
-                    <Button
-                        variant="contained"
-                        onClick={() =>
-                            this.travellingSalesperson(this.state.matrix)
-                        }
-                        style={startButtonStyle}
-                    >
-                        Start
-                    </Button>
-                    <Slider
-                        min={100}
-                        max={1500}
-                        value={this.state.delay}
-                        step={50}
-                        style={sliderStyle}
-                        onChange={(event, value) =>
-                            this.setState({ delay: value })
-                        }
-                        aria-labelledby="continuous-slider"
-                        valueLabelDisplay="auto"
-                    />
-                    <Button
-                        variant="contained"
-                        onClick={() => window.location.reload(false)}
-                        style={replayButtonStyle}
-                    >
-                        <ReplayIcon />
-                    </Button>
                 </ReactFlow>
             </div>
         );

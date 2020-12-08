@@ -1,5 +1,5 @@
 export const selectedNodeStyle = {
-    background: 'white',
+    background: '#146474',
     width: 70,
     height: 70,
     borderRadius: '50%',
@@ -12,11 +12,7 @@ export const selectedNodeStyle = {
 };
 
 export const unselectedNodeStyle = {
-    background: '#110A2E',
-    borderStyle: 'solid',
-    boxSizing: 'border-box',
-    borderColor: 'white',
-    borderWidth: '2',
+    background: 'white',
     width: 70,
     height: 70,
     borderRadius: '50%',
@@ -29,79 +25,41 @@ export const unselectedNodeStyle = {
 };
 
 export const unselectedEdgeStyle = {
-    stroke: '#dddddddd',
-    strokeWidth: 2,
+    stroke: '#dddddd77',
+    strokeWidth: 1,
 };
 
 export const selectedEdgeStyle = {
-    stroke: 'white',
-    strokeWidth: 4,
+    stroke: '#146474',
+    strokeWidth: 5.5,
 };
 
 export const graphStyle = {
-    height: window.innerHeight,
-    width: '50%',
-    background: '#110A2E',
+    height: window.innerHeight * 0.8,
+    background: '#021019',
     float: 'right',
 };
 
-export const nodeImageStyle = { width: 40 };
+export const nodeImageStyle = { width: 50 };
 
-export const costTextStyle = {
-    position: 'absolute',
-    left: 20,
-    top: 110,
-    color: 'white',
-};
-
-export const pathTextStyle = {
-    position: 'absolute',
-    left: 20,
-    top: 135,
-    color: 'white',
-};
-
-export const currentTextStyle = {
-    position: 'absolute',
-    left: 20,
-    top: 160,
-    color: 'white',
-};
-
-export const delayTextStyle = {
-    position: 'absolute',
-    left: 20,
-    top: 185,
-    zIndex: 4,
-    width: 100,
+export const textStyle = {
     color: 'white',
 };
 
 export const titleTextStyle = {
-    position: 'absolute',
-    left: 20,
-    top: 20,
-    zIndex: 4,
     fontSize: 25,
     fontWeight: 'bold',
     color: 'white',
 };
 
 export const sliderStyle = {
-    color: '#23C779',
-    position: 'absolute',
-    left: 105,
-    top: 180,
-    zIndex: 4,
+    color: '#146474',
     width: 200,
 };
 
 export const replayButtonStyle = {
-    position: 'absolute',
-    left: 135,
-    top: 60,
     zIndex: 4,
-    background: '#d90368',
+    background: '#0c4152',
     color: 'white',
     paddingLeft: 30,
     paddingRight: 30,
@@ -112,11 +70,8 @@ export const replayButtonStyle = {
 };
 
 export const startButtonStyle = {
-    position: 'absolute',
-    left: 20,
-    top: 60,
     zIndex: 4,
-    background: '#23C779',
+    background: '#08304b',
     color: 'white',
     paddingLeft: 30,
     paddingRight: 30,
