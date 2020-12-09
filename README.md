@@ -31,3 +31,7 @@ Click “Start” to begin the algorithm. The Graph Visualizer on the right shou
 ## Demo of the Project
 
 [Link to Loom Demo](https://www.loom.com/share/0ca14956590146ec8e576ce614e9effc)
+
+## Project Website
+
+[Link to Project Website](https://nithin2803.github.io/group_47_stadium_hopping/)
