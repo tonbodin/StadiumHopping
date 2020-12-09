@@ -1,4 +1,3 @@
-import dagre from 'dagre';
 import {
     handleStyle,
     selectedNodeStyle,
@@ -10,7 +9,7 @@ import {
 import { Handle, isEdge } from 'react-flow-renderer';
 
 export const generateElements = (matrix, object) => {
-    return generateFlow(generateLinkNodeRep(matrix), object);
+    return generateFlow(getLinkNodeRepresentation(matrix), object);
 };
 
 // taken from Google Maps Docs
@@ -73,16 +72,14 @@ export const makeArray = (w, h, val) => {
     return arr;
 };
 
-const generateLinkNodeRep = (adjMatrix) => {
+const getLinkNodeRepresentation = (adjMatrix) => {
     let result = [];
-    adjMatrix.forEach((arr) => {
-        for (let i = 0; i < arr.length; i++) {
-            let obj = {
-                name: i,
-                links: getLinks(i, adjMatrix),
-            };
-            result.push(obj);
-        }
+    adjMatrix.forEach((arr, i) => {
+        let obj = {
+            name: i,
+            links: getLinks(i, adjMatrix),
+        };
+        result.push(obj);
     });
     return result;
 };
@@ -101,74 +98,55 @@ const getLinks = (index, adjMatrix) => {
     return result;
 };
 
+const generatePositions = (number) => {
+    let result = [];
+    const angleFactor = (2 * Math.PI) / number;
+    let angle;
+    for (let i = 0; i < number; i++) {
+        angle = i * angleFactor;
+        let x = 400 * Math.cos(angle);
+        let y = 400 * Math.sin(angle);
+        result.push([x, y]);
+    }
+    return result;
+};
+
 const generateFlow = (elements, objects) => {
-    const g = new dagre.graphlib.Graph({ multigraph: true });
-    g.setGraph({
-        marginx: 50,
-        marginy: 50,
-    });
-    g.setDefaultEdgeLabel(function () {
-        return {};
-    });
-
-    elements.forEach((e) => {
-        g.setNode(e.name, {
-            label: e.name,
-            width: 50,
-            height: 50,
-        });
-        e.links.forEach((i) => {
-            g.setEdge(e.name, i.name, e.name.toString, i.weight);
-        });
-    });
-    dagre.layout(g);
-    const generatePositions = (number) => {
-        let result = [];
-        const angleFactor = (2 * Math.PI) / number;
-        let angle;
-        for (let i = 0; i < number; i++) {
-            angle = i * angleFactor;
-            let x = 400 * Math.cos(angle);
-            let y = 400 * Math.sin(angle);
-            result.push([x, y]);
-        }
-        return result;
-    };
-
-    const nodes = g.nodes().map((i) => {
-        let n = g.node(i);
-        const pos = generatePositions(g.nodeCount());
+    const nodes = elements.map((node, idx) => {
+        const pos = generatePositions(elements.length);
         return {
-            id: i,
+            id: node.name.toString(),
             data: {
-                img: objects[i].logo,
+                img: objects[idx].logo,
             },
             draggable: false,
             style: unselectedNodeStyle,
             type: 'customNode',
-            width: n.width,
-            height: n.height,
+            width: 50,
+            height: 50,
             position: {
-                x: pos[i][0] - n.width / 2,
-                y: pos[i][1] - n.height / 2,
+                x: pos[idx][0] - 25,
+                y: pos[idx][1] - 25,
             },
         };
     });
-    const edges = g.edges().map((e) => ({
-        id: `__${e.v}__${e.w}`,
-        points: g.edge(e).points,
-        source: e.w,
-        type: 'straight',
-        style: unselectedEdgeStyle,
-        target: e.v,
-        label: Math.floor(e.name) + ' mi',
-        labelBgPadding: [8, 4],
-        labelBgBorderRadius: 5,
-        labelBgStyle: { fill: '#dddddddd' },
-        labelStyle: { fill: '#110A2E', fontWeight: 700 },
-    }));
+    const edges = elements.map((node) => {
+        return node.links.map((edge) => ({
+            id: `__${node.name}__${edge.name}`,
+            source: node.name.toString(),
+            type: 'straight',
+            style: unselectedEdgeStyle,
+            target: edge.name.toString(),
+            label: Math.floor(edge.weight) + ' mi',
+            labelBgPadding: [8, 4],
+            labelBgBorderRadius: 5,
+            labelBgStyle: { fill: '#dddddddd' },
+            labelStyle: { fill: '#110A2E', fontWeight: 700 },
+        }));
+    });
 
-    return [...nodes, ...edges];
+    console.log([...nodes, ...edges.flat()]);
+    return [...nodes, ...edges.flat()];
 };
 
 export const colorPath = (elements, selectedElements) => {

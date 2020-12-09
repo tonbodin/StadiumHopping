@@ -1,8 +1,7 @@
+// imports
 import React from 'react';
-import GraphVisualizer from './components/GraphVisualizer.js';
-import MapContainer from './components/MapContainer.js';
-import { Controls } from './components/Controls';
-import { WelcomeModal } from './components/WelcomeModal';
+import { GraphVisualizer, Controls, WelcomeModal } from './components';
+import MapContainer from './components/MapContainer';
 import './App.css';
 import { NBA_DATASET, NFL_DATASET } from './data';
 import {
@@ -11,23 +10,27 @@ import {
     randomizeData,
 } from './common/util';
 
+// initialize default dataset
 let nba = randomizeData(NBA_DATASET);
 export default class App extends React.Component {
+    // constructor
     constructor(props) {
         super(props);
-        let matrix = generateAdjacencyMatrix(nba);
+        let matrix = generateAdjacencyMatrix(nba); // generate's graph adjacency matrix
         this.state = {
             data: nba,
             matrix: matrix,
-            elements: generateElements(matrix, nba),
+            elements: generateElements(matrix, nba), // generates element representation for the graph renderer
             delay: 1000,
             path: [],
             evaluating: '',
             pathMessage: '',
             running: false,
             dataset: 'NBA',
-            openModal: false,
+            openModal: true,
         };
+
+        // binding methods to local 'this' context
         this.updatePath = this.updatePath.bind(this);
         this.stopRunning = this.stopRunning.bind(this);
         this.startRunning = this.startRunning.bind(this);
@@ -36,14 +39,17 @@ export default class App extends React.Component {
         this.reload = this.reload.bind(this);
     }
 
+    // updates path message and the final path on the map after the algorithm is evaluated
     updatePath(path, pathMessage) {
         this.setState({ path: path, pathMessage: pathMessage });
     }
 
+    // handles the modal being closed
     handleClose() {
         this.setState({ openModal: false });
     }
 
+    // sets the dataset based on the selector and reinitializes the data
     setDataset(dataset) {
         if (this.state.dataset !== dataset) {
             let data =
@@ -64,10 +70,7 @@ export default class App extends React.Component {
         }
     }
 
-    componentDidMount() {
-        this.setState({ openModal: true });
-    }
-
+    // reload the components with newly randomized data from the dataset and reinitialize other properties
     reload() {
         let data =
             this.state.dataset === 'NBA'
@@ -85,16 +88,19 @@ export default class App extends React.Component {
         });
     }
 
+    // method to set the currently evaluating path
     setEvaluating(evaluating) {
         this.setState({ evaluating: evaluating });
     }
 
+    // called after the algorithm is evaluated
     stopRunning() {
         this.setState({
             running: false,
         });
     }
 
+    // called when start button is clicked and resets some values
     startRunning() {
         this.setState({
             path: [],

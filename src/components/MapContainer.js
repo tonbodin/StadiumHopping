@@ -5,6 +5,7 @@ import mapStyles from '../common/mapStyles.json';
 import { USAGeoData } from '../data/USAGeoData.js';
 
 export class MapContainer extends React.Component {
+    // initialize component state
     state = {
         map: {},
         markers: [],
@@ -12,11 +13,14 @@ export class MapContainer extends React.Component {
         showingInfoWindow: false,
     };
 
+    //called when the map is attached to the DOM
     _mapLoaded(mapProps, map) {
+        // set the JSON mapstyles
         map.setOptions({
             styles: mapStyles,
         });
 
+        // sets the style for the KML overlay
         map.data.setStyle({
             fillColor: '#062731',
             strokeWeight: 2,
@@ -24,12 +28,17 @@ export class MapContainer extends React.Component {
             fillOpacity: 2,
         });
 
+        // saves the instance of the map for use in other methods
         this.setState({ map: map });
+
+        // updates the markers with the instance of the map to set them to
         this.updateMarkers(map);
 
+        // adds the KML data to render the bounds of the US
         map.data.addGeoJson(USAGeoData);
     }
 
+    // called when the final solution is passed down and it is rendered on the map
     renderPolyline() {
         var path = [];
         for (let i = 0; i < this.props.polyline.length - 1; i++) {
@@ -49,19 +58,25 @@ export class MapContainer extends React.Component {
         );
     }
 
+    // if the dataset is updated or the HOC is refreshed, then the previous markers should be erased and new markers should be added
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (prevProps.markers && prevProps.markers !== this.props.markers) {
+            //erases previous markers
             prevState.markers.forEach((m) => m.setMap(null));
+
+            //adds new markers
             this.updateMarkers(this.state.map);
         }
     }
 
+    // shows the infowindow when a marker is clicked
     onMarkerClick = (marker) =>
         this.setState({
             selectedMarker: marker,
             showingInfoWindow: true,
         });
 
+    // dismissed the infowindow when the map is clicked
     onMapClicked = (props) => {
         if (this.state.showingInfoWindow) {
             this.setState({
@@ -71,9 +86,11 @@ export class MapContainer extends React.Component {
         }
     };
 
+    // function that uses this.props.markers and renders a map marker for each of them
     updateMarkers(map) {
         let markers = [];
         this.props.markers.forEach((team) => {
+            //call to custom marker class
             let m = new this.marker({
                 latlng: new this.props.google.maps.LatLng(
                     team.latitude,
@@ -86,9 +103,13 @@ export class MapContainer extends React.Component {
                 google: this.props.google,
                 html: `<div id="marker-container"><img id="marker" src=${team.logo}></div>`,
             });
+
+            //adds it to the map
             m.setMap(map);
             markers.push(m);
         });
+
+        // stores these markers for future usage
         this.setState({ markers: markers });
     }
 
@@ -114,6 +135,7 @@ export class MapContainer extends React.Component {
         );
     }
 
+    // custom HTML node to render on the map. Code adapted from https://levelup.gitconnected.com/how-to-create-custom-html-markers-on-google-maps-9ff21be90e4b
     marker = class HTMLMapMarker extends this.props.google.maps.OverlayView {
         constructor(props) {
             super();
